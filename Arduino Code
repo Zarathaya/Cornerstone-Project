@@ -1,0 +1,155 @@
+//Load in necessary libraries
+#include <SPI.h>
+#include <MFRC522.h>
+
+int val;
+//pins of first RGB LED
+const int RED_PIN1 = A3;
+const int GREEN_PIN1 = A4;
+const int BLUE_PIN1 = A5;
+//pins of second RGB LED
+const int RED_PIN2 = 3;
+const int GREEN_PIN2 = 4;
+const int BLUE_PIN2 = 5;
+//pins of third RGB LED
+const int RED_PIN3 = 6;
+const int GREEN_PIN3 = 7;
+const int BLUE_PIN3 = 8;
+//pins of fourth RGB LED
+const int RED_PIN4 = A0;
+const int GREEN_PIN4 = A1;
+const int BLUE_PIN4 = A2;
+constexpr uint8_t RST_PIN = 9; //reset pin for RFID
+constexpr uint8_t SS_PIN = 10;
+MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
+MFRC522::MIFARE_Key key;  //No idea what this does tbh - included in example 
+// Init array that will store new NUID
+byte nuidPICC[4];
+void setup() {
+  Serial.begin(9600);
+  SPI.begin(); // Init SPI bus
+  rfid.PCD_Init(); // Init MFRC522
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;
+  }
+  //Set LED pin outputs
+  pinMode(RED_PIN1, OUTPUT);
+  pinMode(RED_PIN2, OUTPUT);
+  pinMode(RED_PIN3, OUTPUT);
+  pinMode(RED_PIN4, OUTPUT);
+  pinMode(GREEN_PIN1, OUTPUT);
+  pinMode(GREEN_PIN2, OUTPUT);
+  pinMode(GREEN_PIN3, OUTPUT);
+  pinMode(GREEN_PIN4, OUTPUT);
+  pinMode(BLUE_PIN1, OUTPUT);
+  pinMode(BLUE_PIN2, OUTPUT);
+  pinMode(BLUE_PIN3, OUTPUT);
+  pinMode(BLUE_PIN4, OUTPUT);
+ 
+}
+void loop() {
+  // Look for new cards
+  if ( ! rfid.PICC_IsNewCardPresent())
+    return;
+  // Verify if the NUID has been read
+  if ( ! rfid.PICC_ReadCardSerial())
+    return;
+  MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
+  if (rfid.uid.uidByte[0] != nuidPICC[0] ||
+    rfid.uid.uidByte[1] != nuidPICC[1] ||
+    rfid.uid.uidByte[2] != nuidPICC[2] ||
+    rfid.uid.uidByte[3] != nuidPICC[3] ) {
+    // Store NUID into nuidPICC array
+    for (byte i = 0; i < 4; i++) {
+      nuidPICC[i] = rfid.uid.uidByte[i];
+    }
+    //If not read before, runs through printDec method to output the code to the serial
+    printDec(rfid.uid.uidByte, rfid.uid.size);
+    Serial.println();
+  } 
+  
+  
+  //Light code
+  
+  //LED
+ if (nuidPICC[0] == (224)) //conditional checks for each tag and corresponding light color
+  {
+  //Light turns white
+  digitalWrite(RED_PIN1, HIGH);
+  digitalWrite(GREEN_PIN1, HIGH);
+  digitalWrite(BLUE_PIN1, HIGH);
+  digitalWrite(RED_PIN2, HIGH);
+  digitalWrite(GREEN_PIN2, HIGH);
+  digitalWrite(BLUE_PIN2, HIGH);
+  digitalWrite(RED_PIN3, HIGH);
+  digitalWrite(GREEN_PIN3, HIGH);
+  digitalWrite(BLUE_PIN3, HIGH);
+  digitalWrite(RED_PIN4, HIGH);
+  digitalWrite(GREEN_PIN4, HIGH);
+  digitalWrite(BLUE_PIN4, HIGH);
+  }
+
+  //CFL
+if (nuidPICC[0] == 26)
+  {
+  //Light turns yellow
+    // Yellow (Red and Green)
+  digitalWrite(RED_PIN1, HIGH);
+  digitalWrite(GREEN_PIN1, HIGH);
+  digitalWrite(BLUE_PIN1, LOW);
+  digitalWrite(RED_PIN2, HIGH);
+  digitalWrite(GREEN_PIN2, HIGH);
+  digitalWrite(BLUE_PIN2, LOW);
+  digitalWrite(RED_PIN3, HIGH);
+  digitalWrite(GREEN_PIN3, HIGH);
+  digitalWrite(BLUE_PIN3, LOW);
+  digitalWrite(RED_PIN4, HIGH);
+  digitalWrite(GREEN_PIN4, HIGH);
+  digitalWrite(BLUE_PIN4, LOW);
+  }
+ 
+  //Incandescent
+  if (nuidPICC[0] == 3)
+  //Light turns orange 
+  {
+  digitalWrite(RED_PIN1, HIGH);
+  digitalWrite(GREEN_PIN1, LOW);
+  digitalWrite(BLUE_PIN1, LOW);
+  digitalWrite(RED_PIN2, HIGH);
+  digitalWrite(GREEN_PIN2, LOW);
+  digitalWrite(BLUE_PIN2, LOW);
+  digitalWrite(RED_PIN3, HIGH);
+  digitalWrite(GREEN_PIN3, LOW);
+  digitalWrite(BLUE_PIN3, LOW);
+  digitalWrite(RED_PIN4, HIGH);
+  digitalWrite(GREEN_PIN4, LOW);
+  digitalWrite(BLUE_PIN4, LOW);
+  }
+
+ 
+  // Halt PICC
+  rfid.PICC_HaltA();
+ 
+  // Stop encryption on PCD
+  rfid.PCD_StopCrypto1();
+      Serial.println(nuidPICC[0]);
+      Serial.println(nuidPICC[1]);
+      Serial.println(nuidPICC[2]);
+      Serial.println(nuidPICC[3]);
+}
+ 
+ 
+/**
+* Helper routine to dump a byte array as hex values to Serial.
+ */
+ 
+/**
+* Helper routine to dump a byte array as dec values to Serial.
+*/
+void printDec(byte *buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], DEC);
+
+  }
+}
